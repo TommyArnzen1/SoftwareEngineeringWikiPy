@@ -3,7 +3,7 @@
 {% block title %}Login{% endblock title %}
 
 {% block content %}
-<form class="form form-inline" method="POST">
+<form class="form form-inline" action="{{ url_for('wiki.login_check') }}" method="POST">
 	{{ form.hidden_tag() }}
 	{{ form.name(placeholder='Username') }}
 	{{ form.password(placeholder='Password') }}

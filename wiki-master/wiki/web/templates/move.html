@@ -1,3 +1,10 @@
+<script>
+window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+        window.location.reload();
+    }
+}, false);
+</script>
 {% extends "base.html" %}
 
 {% block title %}Move a page{% endblock title %}
