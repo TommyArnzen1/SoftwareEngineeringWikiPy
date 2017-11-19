@@ -24,6 +24,7 @@ from wiki.web.forms import URLForm
 from wiki.web import current_wiki
 from wiki.web import current_users
 from wiki.web.user import protect
+from wiki.web.forms import Add_User_Form
 
 import sqlite3;
 
@@ -100,7 +101,6 @@ def display(url):
 @bp.route('/create/', methods=['GET', 'POST'])
 @protect
 def create():
-    print("check")
     if 'login_check' in session:
         if session['login_check'] == True:
             form = URLForm()
@@ -297,6 +297,98 @@ def tag(name):
         form = LoginForm()
         return render_template('login.html', form=form)
 
+@bp.route('/add_user/', methods=['GET'])
+@protect
+def add_user():
+    if 'login_check' in session:
+        if session['login_check'] == True:
+            query = ("SELECT * FROM Users")
+            cursor.execute(query)
+            results = cursor.fetchall()
+            form = Add_User_Form()
+            return render_template('add_user.html', form=form,
+                                       results=results)
+            return render_template('add_user.html', form=form, results=results)
+        else:
+            form = LoginForm()
+            return render_template('login.html', form=form)
+    else:
+        form = LoginForm()
+        return render_template('login.html', form=form)
+
+@bp.route('/add_user/', methods=['POST'])
+@protect
+def add_user_execute():
+    if 'login_check' in session:
+        if session['login_check'] == True:
+
+            if request.form['action'] == 'add_user':
+                # Get the username and password from the form.
+                username = request.form['username']
+                password = request.form['password']
+                name = request.form['name']
+
+                # Check to see if the username is already in the database.
+                check_user = ("SELECT * FROM users WHERE username = ?")
+                cursor.execute(check_user, [(username)])
+                results = cursor.fetchone()
+
+                # If the username is not in the database add the user.
+                if results is None:
+                    # If the username is not already in the database add the user to the database.
+                    add_user = ("INSERT INTO Users('name', 'username', 'password') VALUES(?, ?, ?)");
+                    cursor.execute(add_user, [(name), (username), (password)])
+                    conn.commit()
+
+                    check_user = ("SELECT * FROM users WHERE username = ?")
+                    cursor.execute(check_user, [(username)])
+                    results = cursor.fetchone()
+
+                    if results is None:
+                        flash("There was an error adding the new user to the system.")
+                    else:
+                        flash("User added to the system.")
+
+                else:
+                    flash("That username is already in the system. Please enter another username.")
+
+                query = ("SELECT * FROM Users")
+                cursor.execute(query)
+                results = cursor.fetchall()
+
+                form = Add_User_Form()
+                return render_template('add_user.html', form=form, results=results)
+
+            elif request.form['action'] == 'delete_user':
+                # Get the username and password from the form.
+                user_id = request.form['user_id']
+
+                user_id = request.form['user_id']
+                query = ("DELETE FROM Users WHERE id = ?")
+                cursor.execute(query, [(user_id)])
+                results = cursor.fetchall()
+
+                # Check if the user was deleted.
+                if results is None:
+                    # Display that the user was not deleted.
+                    flash("There was an error deleting the user. Please try agagin.")
+                else:
+                    flash("The user has been deleted.")
+
+                query = ("SELECT * FROM Users")
+                cursor.execute(query)
+                results = cursor.fetchall()
+
+                form = Add_User_Form()
+                return render_template('add_user.html', form=form, results=results)
+
+        else:
+            form = LoginForm()
+            return render_template('login.html', form=form)
+    else:
+        form = LoginForm()
+        return render_template('login.html', form=form)
+
 
 @bp.route('/search/', methods=['GET', 'POST'])
 @protect
@@ -345,6 +437,7 @@ def login_check():
     # If the login details are correct display the home page.
     if results:
         session['login_check'] = True
+        session['username'] = username
         page = current_wiki.get('home')
         if page:
             return display('home')

@@ -1,0 +1,92 @@
+<script>
+window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+        window.location.reload();
+    }
+}, false);
+</script>
+
+<style>
+
+    table {
+        font-family: Arial;
+        border-collapse: collapse;
+        width: 90%;
+    }
+
+    td {
+        border:1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+
+    th {
+        border:1px solid #ddd;
+        padding: 8px;
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: left;
+        background-color:green;
+        color:white;
+    }
+
+
+</style>
+
+{% extends "base.html" %}
+
+{% block title %}Add User{% endblock title %}
+{% block content %}
+<form method="POST" class="form-inline">
+    <input style="width:175px; height:30px;" type="text" name="name" placeholder="Name">
+	<input style="width:175px; height:30px;" type="text" name="username" placeholder="Username">
+    <input style="width:175px; height:30px;" type="password" name="password" placeholder="Password">
+    <input type="hidden" name="action" value="add_user">
+	<input type="submit" class="btn btn-success" value="Add User">
+</form>
+
+    <h1 style="margin-top: 10%; margin-bottom:5%;">Delete User</h1>
+    {% if results|length > 1 %}
+    <table style="">
+        <tr>
+            <th>
+                Name
+            </th>
+            <th>
+                Username
+            </th>
+            <th>
+                Password
+            </th>
+            <th></th>
+        </tr>
+            {% for result in results %}
+                {% if result[2] != session['username'] %}
+                    <tr>
+                        <td>
+                            {% print(result[1]) %}
+                        </td>
+                        <td>
+                            {% print(result[2]) %}
+                        </td>
+                        <td>
+                            {% print(result[3]) %}
+                        </td>
+                        <td>
+                            <form method="POST" class="form-inline">
+                                <input type="hidden" name="user_id" value="{% print(result[0]) %}">
+                                <input type="hidden" name="action" value="delete_user">
+	                            <input type="submit" class="btn btn-success" value="Delete User">
+                            </form>
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <h3>There are current no other accounts in the system.</h3>
+        {% endif %}
+
+
+    </table>
+
+{% endblock content %}

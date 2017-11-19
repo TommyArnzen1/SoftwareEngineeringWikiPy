@@ -22,6 +22,11 @@
 								<li class="divider-vertical"></li>
 								<li><a href="{{ url_for('wiki.create') }}">New Page</a></li>
 								<li class="divider-vertical"></li>
+
+                                {% if session['login_check'] == True %}
+                                    <li><a href="{{ url_for('wiki.add_user') }}">Manage Users</a></li>
+                                {% endif %}
+
 								<li></li>
 							</ul>
 
