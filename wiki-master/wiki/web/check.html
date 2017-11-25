@@ -1,0 +1,54 @@
+<script>
+
+    function check_table(value){
+
+        var body = document.body, range, sel;
+        if (document.createRange && window.getSelection()){
+
+            range = document.createRange();
+            sel = window.getSelection();
+            sel.removeAllRanges();
+            try {
+                range.selectNodeContents();
+                sel.addRange(range);
+            } catch (exception) {
+                range.selectNode(value);
+                sel.addRange(range);
+            }
+
+        } else if (body.createTextRange()) {
+            range = body.createTextRange();
+            range.moveToElementText(value);
+            range.select();
+
+        }
+
+    }
+
+</script>
+
+<table id="tableId">
+    <thead>
+        <tr>
+            <th>
+                Heading
+            </th>
+            <th>
+                Heading Two
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                Element
+            </td>
+            <td>
+                Element
+            </td>
+        </tr>
+    </tbody>
+
+</table>
+
+<input type="button" value="Check" onclick="check_table(document.getElementById('tableId'));" >

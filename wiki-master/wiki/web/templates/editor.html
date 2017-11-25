@@ -6,6 +6,33 @@ window.addEventListener('pageshow', function (event) {
 }, false);
 </script>
 
+<style>
+
+    table {
+        font-family: Arial;
+        border-collapse: collapse;
+        width: 90%;
+    }
+
+    td {
+        border:1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+
+    th {
+        border:1px solid #ddd;
+        padding: 8px;
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: left;
+        background-color:green;
+        color:white;
+    }
+
+
+</style>
+
 {% extends "base.html" %}
 
 {% block title -%}
@@ -37,9 +64,57 @@ Wiki Editor
 	</div>
 	<div class="tab-pane" id="preview"></div>
 </div>
+
+    <table style="width:100%; margin-top:8%;">
+        <tr>
+            <th>
+                Start Time
+            </th>
+            <th>
+                End Time
+            </th>
+            <th>
+
+            </th>
+            <th>
+
+            </th>
+        </tr>
+        <tr>
+            <td>
+                Check
+            </td>
+            <td>
+                Check
+            </td>
+            <td>
+                <form method="POST" class="form-inline" style="margin-top:8px; display:inline-block;">
+                    <input type="hidden" name="user_id" value="Check">
+                    <input type="hidden" name="action" value="delete_user">
+                    <input type="submit" class="btn btn-success" value="End">
+                </form>
+            </td>
+            <td>
+                <form method="POST" class="form-inline" style="margin-top:8px; display:inline-block;">
+                    <input type="hidden" name="user_id" value="Check">
+                    <input type="hidden" name="action" value="delete_user">
+                    <input type="submit" class="btn btn-success" value="Delete">
+                </form>
+            </td>
+        </tr>
+
+    </table>
+
+    <form method="POST" class="form-inline" style="margin-top:8px; display:inline-block;">
+        <input type="hidden" name="user_id" value="Check">
+        <input type="hidden" name="action" value="delete_user">
+        <input type="submit" class="btn btn-success" value="Start New">
+    </form>
+
 {% endblock content %}
 
 {% block sidebar %}
+
 <h3>Editor How-To</h3>
 <p>This editor is <a href="http://daringfireball.net/projects/markdown/">markdown</a> featured.</p>
 <pre><code>* I
