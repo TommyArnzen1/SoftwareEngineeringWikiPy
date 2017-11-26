@@ -5,8 +5,11 @@ conn = sqlite3.connect('../database.db')
 cursor = conn.cursor()
 
 # cursor.execute("DROP TABLE Users")
-# cursor.execute("CREATE TABLE Users(id INTEGER PRIMARY KEY AUTOINCREMENT , name TEXT, username TEXT, password TEXT)")
-# cursor.execute(("INSERT INTO Users('name', 'username', 'password') VALUES('Tommy', 'Tommy', 'Check')"))
+#cursor.execute("CREATE TABLE Users(id INTEGER PRIMARY KEY AUTOINCREMENT , name TEXT, username TEXT, password TEXT)")
+#cursor.execute(("INSERT INTO Users('name', 'username', 'password') VALUES('Tommy', 'Tommy', 'Check')"))
+
+# cursor.execute("DROP TABLE logs")
+#cursor.execute("create table logs(id INTEGER PRIMARY KEY AUTOINCREMENT, event TEXT, username TEXT, eventTime TEXT)");
 
 
 query = ("SELECT * FROM Users")
@@ -14,9 +17,9 @@ query = ("SELECT * FROM Users")
 
 
 # find_user = ("SELECT * FROM users WHERE username = ? AND password = ?")
-username = 'Tommy'
-password = 'Check'
-cursor.execute(query)
+#username = 'Tommy'
+#password = 'Check'
+#cursor.execute(query)
 # cursor.execute(find_user, [(username), (password)])
 results = cursor.fetchall()
 

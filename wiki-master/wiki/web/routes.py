@@ -30,8 +30,13 @@ from wiki.web.user import protect
 # Used for adding and deleting users.
 from wiki.web.forms import Add_User_Form
 
+<<<<<<< HEAD
+import sqlite3
+import datetime
+=======
 # Used for user logins.
 import sqlite3
+>>>>>>> 133294f6ce4716ac6be265bcaeecf35e68b1dfea
 
 # Used for pandoc PDF conversions.
 import pypandoc
@@ -46,8 +51,16 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email import encoders
 
+<<<<<<< HEAD
+
+bp = Blueprint('wiki', __name__)
+
+conn = sqlite3.connect('database.db', check_same_thread=False)
+=======
 conn = sqlite3.connect('database.db')
+>>>>>>> 133294f6ce4716ac6be265bcaeecf35e68b1dfea
 cursor = conn.cursor()
+#sqlite3.connect(":memory:", check_same_thread=False)
 
 bp = Blueprint('wiki', __name__)
 
@@ -352,9 +365,24 @@ def add_user_execute():
             else:
                 flash("That username is already in the system. Please enter another username.")
 
+<<<<<<< HEAD
+                    if results is None:
+                        flash("There was an error adding the new user to the system.")
+                    else:
+                        # log the user login to the log table
+                        log_user_created = ("INSERT INTO logs('event', 'username', 'eventTime') VALUES(?, ?, ?)");
+                        eventString = "User: " + username + " created"
+                        createdBy = session['username']
+                        currentDT = datetime.datetime.now()
+                        eventTime = currentDT.strftime("%Y-%m-%d %H:%M:%S")  # format time to YYYY-MM-DD HH:MM:SS
+                        cursor.execute(log_user_created, [eventString, createdBy, eventTime])
+                        conn.commit()
+                        flash("User added to the system.")
+=======
             query = ("SELECT * FROM Users")
             cursor.execute(query)
             results = cursor.fetchall()
+>>>>>>> 133294f6ce4716ac6be265bcaeecf35e68b1dfea
 
             form = Add_User_Form()
             return render_template('add_user.html', form=form, results=results)
@@ -421,6 +449,7 @@ def login_check():
 
     # Declare a query to check if the login details are correct.
     find_user = ("SELECT * FROM users WHERE username = ? AND password = ?")
+
     cursor.execute(find_user, [(username), (password)])
     results = cursor.fetchall()
 
@@ -429,6 +458,16 @@ def login_check():
     if results:
         session['login_check'] = True
         session['username'] = username
+
+        # log the user creation event to the log table
+        log_user_created = ("INSERT INTO logs('event', 'username', 'eventTime') VALUES(?, ?, ?)")
+        eventstring = "User: " + username + " logged in"
+        createdby = session['username']
+        currentdt = datetime.datetime.now()
+        eventtime = currentdt.strftime("%Y-%m-%d %H:%M:%S")  # format time to YYYY-MM-DD HH:MM:SS
+        cursor.execute(log_user_created, [eventstring, createdby, eventtime]);
+        conn.commit()
+
         page = current_wiki.get('home')
         if page:
             return display('home')
@@ -442,7 +481,18 @@ def login_check():
 
 @bp.route('/user/logout/')
 def user_logout():
+    username = session['username']
     del session['login_check']
+
+    # log the user logout to the log table
+    log_user_created = ("INSERT INTO logs('event', 'username', 'eventTime') VALUES(?, ?, ?)");
+    eventString = "User: " + username + " logged out"
+    createdBy = session['username']
+    currentDT = datetime.datetime.now()
+    eventTime = currentDT.strftime("%Y-%m-%d %H:%M:%S")  # format time to YYYY-MM-DD HH:MM:SS
+    cursor.execute(log_user_created, [eventString, createdBy, eventTime])
+    conn.commit()
+
     flash('Logout successful.', 'success')
     return redirect(url_for('wiki.index'))
 
