@@ -6,6 +6,56 @@ window.addEventListener('pageshow', function (event) {
 }, false);
 </script>
 
+<script>
+
+    function check_values() {
+
+        // Get the value of the name element.
+        var name = document.getElementById("add_name").value;
+
+        // Get the value of the username element.
+        var username = document.getElementById("add_username").value;
+
+        // Get the value of the password element.
+        var password = document.getElementById("add_password").value;
+
+        // Check to see if a value was entered for the name element.
+        if (name == "") {
+
+            // If a value was not entered for the name element display a message.
+            alert("Enter a name for the new user.");
+
+            // Return false.
+            return false;
+        }
+
+        // Check to see if a value was entered for the username element.
+        if (username == "") {
+
+            // If a value was not entered for the username element display a message.
+            alert("Enter a username for the new user.");
+
+            // Return false.
+            return false;
+        }
+
+        // Check to see if a value was entered for the password element.
+        if (password == "") {
+
+            // If a value was not entered for the password element display a message.
+            alert("Enter a password for the new user.");
+
+            // Return false.
+            return false;
+        }
+
+        // If values were entered for the name, username, and password elements return true.
+        return true;
+
+    }
+
+</script>
+
 <style>
 
     table {
@@ -38,16 +88,16 @@ window.addEventListener('pageshow', function (event) {
 {% block title %}Add User{% endblock title %}
 {% block content %}
 <form method="POST" class="form-inline">
-    <input style="width:175px; height:30px;" type="text" name="name" placeholder="Name">
-	<input style="width:175px; height:30px;" type="text" name="username" placeholder="Username">
-    <input style="width:175px; height:30px;" type="password" name="password" placeholder="Password">
+    <input id="add_name" style="width:175px; height:30px;" type="text" name="name" placeholder="Name">
+	<input id="add_username" style="width:175px; height:30px;" type="text" name="username" placeholder="Username">
+    <input id="add_password" style="width:175px; height:30px;" type="password" name="password" placeholder="Password">
     <input type="hidden" name="action" value="add_user">
-	<input type="submit" class="btn btn-success" value="Add User">
+	<input type="submit" onclick="return check_values();" class="btn btn-success" value="Add User">
 </form>
 
     <h1 style="margin-top: 10%; margin-bottom:5%;">Delete User</h1>
     {% if results|length > 1 %}
-    <table style="">
+    <table style="margin-bottom: 10%;">
         <tr>
             <th>
                 Name
