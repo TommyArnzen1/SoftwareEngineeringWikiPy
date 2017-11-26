@@ -9,6 +9,7 @@ from wiki.core import wikilink
 from wiki.core import Page
 from wiki.core import Processor
 
+
 from . import WikiBaseTestCase
 
 
