@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}View system logs{% endblock title %}
+{% block content %}
+    <h1 style="margin-top: 10%; margin-bottom:5%;">History</h1>
+    {% if results|length > 1 %}
+        <table class="table table-striped" style="width: 100%">
+            <thead>
+                <tr>
+                    <td>ID</td>
+                    <td>Event</td>
+                    <td>Username</td>
+                    <td>Event time</td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                    <tr>
+                        <td>{% print(result[0]) %}</td>
+                        <td>{% print(result[1]) %}</td>
+                        <td>{% print(result[2]) %}</td>
+                        <td>{% print(result[3]) %}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <h2>No user events logged presently.</h2>
+    {% endif %}
+{% endblock content %}

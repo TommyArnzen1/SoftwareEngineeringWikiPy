@@ -33,21 +33,17 @@ from wiki.web.forms import Add_User_Form
 # Used for user logins.
 import sqlite3
 
-# Used for pandoc PDF conversions.
-import pypandoc
+import datetime
 
 # Used to check if a file exists.
 import os
 
-# Used to send emails with PDF files.
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-from email import encoders
+
+import WikiPy
 
 conn = sqlite3.connect('database.db')
 cursor = conn.cursor()
+
 
 bp = Blueprint('wiki', __name__)
 
@@ -133,6 +129,11 @@ def edit(url):
                 page = current_wiki.get_bare(url)
             form.populate_obj(page)
             page.save()
+            
+            eventString = "File: " + page.path + " edited."
+            editedBy = session['username']
+            log_event(eventString, editedBy)
+            
             flash('"%s" was saved.' % page.title, 'success')
             return redirect(url_for('wiki.display', url=url))
         return render_template('editor.html', form=form, page=page)
@@ -190,11 +191,15 @@ def PDF_convert(url):
         form = URLForm(obj=page)
         newurl = form.url.data
         current_wiki.move(url, newurl)
-        pypandoc.convert('content/' + newurl + '.md', 'pdf', outputfile="wiki/web/PDF/" + newurl + ".pdf", extra_args=['-V', 'geometry:margin=1.5cm'])
+        # pypandoc.convert('content/' + newurl + '.md', 'pdf', outputfile="wiki/web/PDF/" + newurl + ".pdf", extra_args=['-V', 'geometry:margin=1.5cm'])
+        WikiPy.convert_markdown_PDF('content/' + newurl + '.md', "wiki/web/PDF/" + newurl + ".pdf")
         filename = "PDF/" + newurl + ".pdf"
         if os.path.exists("wiki/web/" + filename):
+            eventString = "File: " + newurl +".md" + " converted to pdf file: " + newurl + ".pdf"
+            convertedBy = session["username"]
+            log_event(eventString, convertedBy)
             return send_file(filename, as_attachment=True)
-        return redirect(url_for('wiki.display', url=newurl))
+            return redirect(url_for('wiki.display', url=newurl))
     else:
         form = LoginForm()
         return render_template('login.html', form=form)
@@ -209,40 +214,15 @@ def Send_email():
 
     if check == True:
         url = request.form['file_location']
-        pypandoc.convert('content/' + url + '.md', 'pdf', outputfile="wiki/web/PDF/" + url + ".pdf", extra_args=['-V', 'geometry:margin=1.5cm'])
-        username = 'updatewpy@gmail.com'
-        password = 'pass1pass1234'
-        to = 'arnzent1@mymail.nku.edu'
-
-        if request.method == 'POST':
-            to = request.form['email_addresses']
-            if "," in to:
-                ' ,'.join("'{0}'".format(x) for x in to)
-
-        message = MIMEMultipart()
-        message['From'] = username
-        message['To'] = "[" + to + "]"
-        message['Subject'] = url.capitalize()
-        body = "Email sent from wikiPy."
-
-        body_send = MIMEText(body, 'plain')
-        message.attach(body_send)
-        filename = "wiki/web/PDF/" + url + ".pdf"
-
-        element = MIMEBase('application', "octet-stream")
-        element.set_payload(open(filename, "rb").read())
-        encoders.encode_base64(element)
-        element.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(filename))
-        message.attach(element)
-
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
-        server.login(username, password)
-        server.sendmail(username, to, message.as_string())
-        server.close()
-        return redirect(url_for('wiki.display', url=url))
+        return_location = url
+        output = "wiki/web/PDF/" + url + ".pdf"
+        url = 'content/' + url + '.md'
+        to = request.form['email_addresses']
+        WikiPy.send_email(url, output, return_location, "", to)
+        eventString = "Email with attached file; " + url + ".pdf sent to " + to
+        currentUser = session["username"]
+        log_event(eventString, currentUser)
+        return redirect(url_for('wiki.display', url=return_location))
     else:
         form = LoginForm()
         return render_template('login.html', form=form)
@@ -258,6 +238,11 @@ def delete(url):
     if check == True:
         page = current_wiki.get_or_404(url)
         current_wiki.delete(url)
+        
+        eventString = "File: " + page.path + " deleted"
+        currentUser = session["username"]
+        log_event(eventString, currentUser)
+        
         flash('Page "%s" was deleted.' % page.title, 'success')
         return redirect(url_for('wiki.home'))
     else:
@@ -293,6 +278,24 @@ def tag(name):
     else:
         form = LoginForm()
         return render_template('login.html', form=form)
+        
+        
+@bp.route('/auditlog/', methods=['GET'])
+@protect
+def auditlog():
+    if 'login_check' in session:
+        if session['login_check']:
+            query=("select * from logs ORDER BY id DESC")
+            cursor.execute(query)
+            results=cursor.fetchall()
+            return render_template('auditlog.html', results=results)
+        else:
+            form = LoginForm()
+            return render_template('login.html', form=form)
+    else:
+        form = LoginForm()
+        return render_template('login.html', form=form)
+        
 
 @bp.route('/add_user/', methods=['GET'])
 @protect
@@ -347,6 +350,9 @@ def add_user_execute():
                 if results is None:
                     flash("There was an error adding the new user to the system.")
                 else:
+                    eventString = "User: " + username + " created"
+                    createdBy = session['username']
+                    log_event(eventString, createdBy)
                     flash("User added to the system.")
 
             else:
@@ -375,6 +381,11 @@ def add_user_execute():
                 # Display that the user was not deleted.
                 flash("There was an error deleting the user. Please try agagin.")
             else:
+            
+            	eventString="User: " + user_id + " deleted from the system"
+                deletedBy= session["username"]
+                log_event(eventString, deletedBy)
+            
                 flash("The user has been deleted.")
 
             query = ("SELECT * FROM Users")
@@ -429,6 +440,11 @@ def login_check():
     if results:
         session['login_check'] = True
         session['username'] = username
+        
+        eventstring = "User: " + username + " logged in"
+        createdby = session['username']
+        log_event(eventstring, createdby)
+        
         page = current_wiki.get('home')
         if page:
             return display('home')
@@ -442,7 +458,15 @@ def login_check():
 
 @bp.route('/user/logout/')
 def user_logout():
+
+    username = session['username']
+
     del session['login_check']
+    
+    eventString = "User: " + username + " logged out"
+    createdBy = session['username']
+    log_event(eventString, createdBy)
+    
     flash('Logout successful.', 'success')
     return redirect(url_for('wiki.index'))
 
@@ -475,6 +499,15 @@ def user_admin(user_id):
 def user_delete(user_id):
     pass
 
+def log_event(event_string, event_creator):
+    query = ("INSERT INTO logs('event', 'username', 'eventTime') VALUES(?, ?, ?)")
+    eventString = event_string
+    creator = event_creator
+    currentDT = datetime.datetime.now()
+    event_time = currentDT.strftime("%Y-%m-%d %H:%M:%S")  # format time to YYYY-MM-DD HH:MM:SS
+    cursor.execute(query, [eventString, creator, event_time])
+    conn.commit()
+
 
 """
     Error Handlers
@@ -485,3 +518,40 @@ def user_delete(user_id):
 @bp.errorhandler(404)
 def page_not_found(error):
     return render_template('404.html'), 404
+
+
+"""
+        pypandoc.convert('content/' + url + '.md', 'pdf', outputfile="wiki/web/PDF/" + url + ".pdf", extra_args=['-V', 'geometry:margin=1.5cm'])
+        username = 'updatewpy@gmail.com'
+        password = 'pass1pass1234'
+        to = 'arnzent1@mymail.nku.edu'
+
+        if request.method == 'POST':
+            to = request.form['email_addresses']
+            if "," in to:
+                ' ,'.join("'{0}'".format(x) for x in to)
+
+        message = MIMEMultipart()
+        message['From'] = username
+        message['To'] = "[" + to + "]"
+        message['Subject'] = url.capitalize()
+        body = "Email sent from wikiPy."
+
+        body_send = MIMEText(body, 'plain')
+        message.attach(body_send)
+        filename = "wiki/web/PDF/" + url + ".pdf"
+
+        element = MIMEBase('application', "octet-stream")
+        element.set_payload(open(filename, "rb").read())
+        encoders.encode_base64(element)
+        element.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(filename))
+        message.attach(element)
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
+        server.login(username, password)
+        server.sendmail(username, to, message.as_string())
+        server.close()
+        """
