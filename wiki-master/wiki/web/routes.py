@@ -30,15 +30,17 @@ from wiki.web.user import protect
 # Used for adding and deleting users.
 from wiki.web.forms import Add_User_Form
 
-# Used for user logins.
-import sqlite3
-
 import datetime
 
 # Used to check if a file exists.
 import os
 
 
+# Used for user logins.
+import sqlite3
+
+# Convert markdown files to
+# PDF files - send emails.
 import WikiPy
 
 conn = sqlite3.connect('database.db')
@@ -186,20 +188,30 @@ def PDF_convert(url):
     # Check to see if the user is currently logged in.
     check = check_login()
 
+    # If the user is logged in convert the markdown file to a PDF file.
     if check == True:
         page = current_wiki.get_or_404(url)
         form = URLForm(obj=page)
         newurl = form.url.data
         current_wiki.move(url, newurl)
-        # pypandoc.convert('content/' + newurl + '.md', 'pdf', outputfile="wiki/web/PDF/" + newurl + ".pdf", extra_args=['-V', 'geometry:margin=1.5cm'])
+
+        # Convert the markdown file to a PDF file with the WikiPy library.
         WikiPy.convert_markdown_PDF('content/' + newurl + '.md', "wiki/web/PDF/" + newurl + ".pdf")
+
+        # Store the location of the newly converted PDF file.
         filename = "PDF/" + newurl + ".pdf"
+
+        # Check to see if the newly converted PDF file exists.
         if os.path.exists("wiki/web/" + filename):
             eventString = "File: " + newurl +".md" + " converted to pdf file: " + newurl + ".pdf"
             convertedBy = session["username"]
             log_event(eventString, convertedBy)
+
+            # Download the PDF file.
             return send_file(filename, as_attachment=True)
             return redirect(url_for('wiki.display', url=newurl))
+
+    # If the user is not logged in display the login form.
     else:
         form = LoginForm()
         return render_template('login.html', form=form)
@@ -212,17 +224,30 @@ def Send_email():
     # Check to see if the user is currently logged in.
     check = check_login()
 
+    # If the user is not logged in send the email.
     if check == True:
+
+        # Store the location of the file to be converted.
         url = request.form['file_location']
         return_location = url
+
+        # Store the location of the converted PDF file.
         output = "wiki/web/PDF/" + url + ".pdf"
+
+        # Store the location of the file to be converted.
         url = 'content/' + url + '.md'
+
+        # Store the email addresses to receive the message.
         to = request.form['email_addresses']
+
+        # Send the email with the WikiPy send_email function.
         WikiPy.send_email(url, output, return_location, "", to)
         eventString = "Email with attached file; " + url + ".pdf sent to " + to
         currentUser = session["username"]
         log_event(eventString, currentUser)
         return redirect(url_for('wiki.display', url=return_location))
+
+    # If the user is not logged in display the login form.
     else:
         form = LoginForm()
         return render_template('login.html', form=form)
@@ -304,12 +329,19 @@ def add_user():
     # Check to see if the user is currently logged in.
     check = check_login()
 
+    # Check to see if the user is logged in.
     if check == True:
+
+        # Get every user in the database.
         query = ("SELECT * FROM Users")
         cursor.execute(query)
         results = cursor.fetchall()
         form = Add_User_Form()
+
+        # Display the add_user page.
         return render_template('add_user.html', form=form, results=results)
+
+    # If the user is not logged in display the login page.
     else:
         form = LoginForm()
         return render_template('login.html', form=form)
@@ -321,8 +353,10 @@ def add_user_execute():
     # Check to see if the user is currently logged in.
     check = check_login()
 
+    # Check to see if the user is logged in.
     if check == True:
 
+        # Check to see if the form action is set to 'add_user'.
         if request.form['action'] == 'add_user':
 
             # Get the username and password from the form.
@@ -343,34 +377,42 @@ def add_user_execute():
                 cursor.execute(add_user, [(name), (username), (password)])
                 conn.commit()
 
+                # Check to see if the username was added to the database.
                 check_user = ("SELECT * FROM users WHERE username = ?")
                 cursor.execute(check_user, [(username)])
                 results = cursor.fetchone()
 
+                # If the username was not added to the database display a message.
                 if results is None:
-                    flash("There was an error adding the new user to the system.")
+                    flash("There was an error adding the new user to the database.")
+
+                # If the username was added to the database display a message.
                 else:
                     eventString = "User: " + username + " created"
                     createdBy = session['username']
                     log_event(eventString, createdBy)
                     flash("User added to the system.")
 
+            # If the user is already in the database display a message.
             else:
-                flash("That username is already in the system. Please enter another username.")
+                flash("That username is already in the database. Please enter another username.")
 
+            # Get every username in the database.
             query = ("SELECT * FROM Users")
             cursor.execute(query)
             results = cursor.fetchall()
 
+            # Display the add_user form.
             form = Add_User_Form()
             return render_template('add_user.html', form=form, results=results)
 
+        # Check to see if the form action is set to 'delete_user'.
         elif request.form['action'] == 'delete_user':
 
             # Get the username and password from the form.
             user_id = request.form['user_id']
 
-            user_id = request.form['user_id']
+            # Delete the user from the database.
             query = ("DELETE FROM Users WHERE id = ?")
             cursor.execute(query, [(user_id)])
             results = cursor.fetchall()
@@ -378,23 +420,27 @@ def add_user_execute():
             # Check if the user was deleted.
             if results is None:
 
-                # Display that the user was not deleted.
+                # If the user was not deleted display a message.
                 flash("There was an error deleting the user. Please try agagin.")
             else:
             
             	eventString="User: " + user_id + " deleted from the system"
                 deletedBy= session["username"]
                 log_event(eventString, deletedBy)
-            
+
+                # If the user was deleted display a message.
                 flash("The user has been deleted.")
 
+            # Get every user in the database.
             query = ("SELECT * FROM Users")
             cursor.execute(query)
             results = cursor.fetchall()
 
+            # Display the add_user page.
             form = Add_User_Form()
             return render_template('add_user.html', form=form, results=results)
 
+    # If the user is not logged in display the login page.
     else:
         form = LoginForm()
         return render_template('login.html', form=form)
